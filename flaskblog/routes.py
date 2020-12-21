@@ -63,6 +63,16 @@ def login():
             If you do not, your application will be vulnerable to open redirects.
             For an example implementation of is_safe_url see this Flask Snippet :
             https://web.archive.org/web/20190128010142/http://flask.pocoo.org/snippets/62/
+            >> The snippet :
+
+            from urllib.parse import urlparse, urljoin
+
+            def is_safe_url(target):
+                ref_url = urlparse(request.host_url)
+                test_url = urlparse(urljoin(request.host_url, target))
+                return test_url.scheme in ('http', 'https') and \
+                    ref_url.netloc == test_url.netloc
+                    
             >> More documentation on stack overflow
             https://stackoverflow.com/questions/60532973/how-do-i-get-a-is-safe-url-function-to-use-with-flask-and-how-does-it-work
             -----------------------------------------------------------------------
