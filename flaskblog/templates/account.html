@@ -9,6 +9,7 @@
         </div>
     </div>
     <!-- FORM HERE -->
+    <!--Ne pas oublier enctype="multipart/form-data -->
     <form method="POST" action="" enctype="multipart/form-data">
         {{ form.hidden_tag() }}
         <fieldset class="form-group">
@@ -40,11 +41,15 @@
                 {% endif %}
             </div>
             <div class="form-group">
-                {{ form.picture.label() }}
-                {{ form.picture(class="form-control-file") }}
+                <p>
+                    {{ form.picture.label() }}
+                </p>
+                <p>
+                    {{ form.picture(class="form-control-file") }}
+                </p>
                 {% if form.picture.errors %}
                     {% for error in form.picture.errors %}
-                        <span class="text-danger">{{ error }}</span></br>
+                        <p class="text-danger">{{ error }}</p></br>
                     {% endfor %}
                 {% endif %}
             </div>
