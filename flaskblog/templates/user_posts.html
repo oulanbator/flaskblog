@@ -1,6 +1,6 @@
 {% extends "layout.html" %}
 {% block content %}
-<h1>Home page</h1>
+<h1 class="mb-3">Posts by {{ user.username }} ({{ posts.total }})</h1>
 <!-- posts.items car c'est un "pagination object" -->
     {% for post in posts.items %}
         <article class="media d-flex content-section">
@@ -27,58 +27,60 @@
 
 <!--Pagination avec iter_pages-->
     {% if posts.page != 1 %}
-        <a class="btn btn-outline-info mb-4" href="{{ url_for('home', page=posts.page-1)}}" aria-label="Previous">&laquo;</a>
+        <a class="btn btn-outline-info mb-4" href="{{ url_for('user_posts', username=user.username, page=posts.page-1)}}" aria-label="Previous">&laquo;</a>
     {% endif %}
     {% for page_num in posts.iter_pages(left_edge=1, right_edge=1, left_current=1, right_current=2) %}
         {% if page_num %}
             {% if posts.page == page_num %}
-                <a class="btn btn-info mb-4" href="{{ url_for('home', page=page_num)}}">{{ page_num }}</a>
+                <a class="btn btn-info mb-4" href="{{ url_for('user_posts', username=user.username, page=page_num)}}">{{ page_num }}</a>
             {% else %}
-                <a class="btn btn-outline-info mb-4" href="{{ url_for('home', page=page_num)}}">{{ page_num }}</a>
+                <a class="btn btn-outline-info mb-4" href="{{ url_for('user_posts', username=user.username, page=page_num)}}">{{ page_num }}</a>
             {% endif %}
         {% else %}
         ...
         {% endif %}
     {% endfor %}
     {% if posts.page != posts.pages %}
-        <a class="btn btn-outline-info mb-4" href="{{ url_for('home', page=posts.page+1)}}" aria-label="Previous">&raquo;</a>
+        <a class="btn btn-outline-info mb-4" href="{{ url_for('user_posts', username=user.username, page=posts.page+1)}}" aria-label="Previous">&raquo;</a>
     {% endif %}
 
 <!-- iter_pages with BOOTSTRAP pagination -->
+<!--
     <nav aria-label="Pagination">
         <ul class="pagination pagination-sm">
-            <!--Previous page-->
+            
             {% if posts.page != 1 %}
                 <li class="page-item">
-                    <a class="page-link" href="{{ url_for('home', page=posts.page-1)}}" aria-label="Previous">
+                    <a class="page-link" href="{{ url_for('user_posts', username=user.username, page=posts.page-1)}}" aria-label="Previous">
                         <span aria-hidden="true">&laquo;</span>
                     </a>
                 </li>
             {% endif %}
-            <!-- pages loop -->
+            
             {% for page_num in posts.iter_pages(left_edge=1, right_edge=1, left_current=1, right_current=2) %}
                 {% if page_num %}
                     {% if posts.page == page_num %}
                         <li class="page-item active" aria-current="page">
-                            <a class="page-link info" href="{{ url_for('home', page=page_num)}}">{{ page_num }}</a>
+                            <a class="page-link info" href="{{ url_for('user_posts', username=user.username, page=page_num)}}">{{ page_num }}</a>
                         </li>
                     {% else %}
                         <li class="page-item">
-                            <a class="page-link info" href="{{ url_for('home', page=page_num)}}">{{ page_num }}</a>
+                            <a class="page-link info" href="{{ url_for('user_posts', username=user.username, page=page_num)}}">{{ page_num }}</a>
                         </li>
                     {% endif %}
                 {% else %}
                     <li class="page-item"><span class="page-link">...</span></li>
                 {% endif %}
             {% endfor %}
-            <!--Next page-->
+            
             {% if posts.page != posts.pages %}
                 <li class="page-item">
-                    <a class="page-link" href="{{ url_for('home', page=posts.page+1)}}" aria-label="Next">
+                    <a class="page-link" href="{{ url_for('user_posts', username=user.username, page=posts.page+1)}}" aria-label="Next">
                     <span aria-hidden="true">&raquo;</span>
                     </a>
                 </li>
             {% endif %}
         </ul>
     </nav>
+-->
 {% endblock content %}

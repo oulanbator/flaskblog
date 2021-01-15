@@ -1,31 +1,20 @@
 import secrets
 import os
 from PIL import Image
-from flask import render_template, url_for, flash, redirect, request
+from flask import render_template, url_for, flash, redirect, request, abort
 from flaskblog import app, db, bcrypt
-from flaskblog.forms import RegistrationForm, LoginForm, UpdateAccountForm
+from flaskblog.forms import RegistrationForm, LoginForm, UpdateAccountForm, PostForm
 from flaskblog.models import User, Post
 from flask_login import login_user, current_user, logout_user, login_required
 # pylint: disable=no-member
 
-posts = [
-    {
-        "author": "Tor",
-        "title": "First post",
-        "content": "Talking about my first blog",
-        "date_posted": "19/12/2020"
-    },
-    {
-        "author": "Rémi",
-        "title": "Second post",
-        "content": "Talking about my second blog",
-        "date_posted": "20/12/2020"
-    }
-]
-
 @app.route('/')
 @app.route('/home')
 def home():
+    # Pagination : récupérer arguments de l'URL (1 = default) : ?page=1, 2, 3, ...
+    page = request.args.get('page', 1, type=int)
+    # Avoir les posts dans l'ordre inverse (le dernier en premier) : order_by(Post.date_posted.desc())
+    posts = Post.query.order_by(Post.date_posted.desc()).paginate(page=page, per_page=5)
     return render_template("home.html", posts=posts)
 
 @app.route('/about')
@@ -137,7 +126,65 @@ def account():
         image_file=image_file, 
         form=form)
 
-@app.route('/post/new')
+@app.route('/post/new', methods=['GET', 'POST'])
 @login_required
 def new_post():
-    return render_template("create_post.html", title="New post")
+    form = PostForm()
+    if form.validate_on_submit():
+        #possible to use the "author" backref OR "user_id" column name
+        post = Post(
+            title = form.title.data,
+            content = form.content.data,
+            author = current_user
+        )
+        db.session.add(post)
+        db.session.commit()
+        flash('Your post has been created !', 'success')
+        return redirect(url_for('home'))
+    return render_template("create_post.html", title="New post", form=form, legend="New Post")
+
+@app.route('/post/<int:post_id>')
+def post(post_id):
+    #post = Post.query.get(post_id)
+    post = Post.query.get_or_404(post_id)
+    return render_template('post.html', title=post.title, post=post)
+
+@app.route('/post/<int:post_id>/update', methods=['GET', 'POST'])
+@login_required
+def update_post(post_id):
+    post = Post.query.get_or_404(post_id)
+    if post.author != current_user:
+        abort(403)
+    form = PostForm()
+    # Populate the form with data from the post
+    if form.validate_on_submit():
+        post.title = form.title.data
+        post.content = form.content.data
+        db.session.commit()
+        flash('Your post has been updated', 'success')
+        return redirect(url_for('post', post_id=post.id))
+    #Pas sûr que ce elif ait bcp de sens
+    elif request.method == 'GET':
+        form.title.data = post.title
+        form.content.data = post.content
+    return render_template("create_post.html", title="Update post", form=form, legend="Update Post")
+
+@app.route('/post/<int:post_id>/delete', methods=['POST'])
+@login_required
+def delete_post(post_id):
+    post = Post.query.get_or_404(post_id)
+    if post.author != current_user:
+        abort(403)
+    db.session.delete(post)
+    db.session.commit()
+    flash('Your post has been deleted', 'success')
+    return redirect(url_for('home'))
+
+@app.route('/user/<string:username>')
+def user_posts(username):
+    page = request.args.get('page', 1, type=int)
+    user = User.query.filter_by(username=username).first_or_404()
+    posts = Post.query.filter_by(author=user)\
+        .order_by(Post.date_posted.desc())\
+        .paginate(page=page, per_page=5)
+    return render_template("user_posts.html", posts=posts, user=user)
