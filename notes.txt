@@ -1,0 +1,32 @@
+-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*
+>>>>> Step 11 - Blueprints and configuration
+
+>>> Blueprints :
+(Split up the different application fonctionalities into their own sections)
+
+- Create new package in our application named after the functions it contains
+exp : users, posts, main
+- Create __init.py__ file in each folder
+- Each folder should contain its own routes.py, forms.py, utils.py, if needed
+
+>> ROUTES
+- Put the routes in the right package (everything related to users f.ex)
+- We don't use the global "app" anymore to define the routes. Change the routes from @app.route() to @users.route()
+- Do the same for posts, and main routes
+
+>> FORMS
+- Put all the forms related to users in its own "forms.py"
+
+>> IMPORTS
+- Put all the imports needed in the right files
+- Fix the imports where some changes are needed
+
+>> Delete old files (forms.py and routes.py)
+
+
+
+
+>>> Application factory : 
+(Creation of the app in a function (usefull if we want an app for development and another for production))
+
+

@@ -1,29 +1,17 @@
-import secrets
-import os
-from PIL import Image
-from flask import render_template, url_for, flash, redirect, request, abort
-from flaskblog import app, db, bcrypt, mail
-from flaskblog.forms import (RegistrationForm, LoginForm, UpdateAccountForm, 
-                            PostForm, RequestResetForm, ResetPasswordForm)
-from flaskblog.models import User, Post
+from flask import Blueprint, render_template, url_for, flash, redirect, request
+from flaskblog import db, bcrypt
 from flask_login import login_user, current_user, logout_user, login_required
-from flask_mail import Message
+from flaskblog.models import User, Post
+from flaskblog.users.forms import RegistrationForm, LoginForm, UpdateAccountForm, RequestResetForm, ResetPasswordForm
+from flaskblog.users.utils import save_picture, send_reset_email
 # pylint: disable=no-member
 
-@app.route('/')
-@app.route('/home')
-def home():
-    # Pagination : récupérer arguments de l'URL (1 = default) : ?page=1, 2, 3, ...
-    page = request.args.get('page', 1, type=int)
-    # Avoir les posts dans l'ordre inverse (le dernier en premier) : order_by(Post.date_posted.desc())
-    posts = Post.query.order_by(Post.date_posted.desc()).paginate(page=page, per_page=5)
-    return render_template("home.html", posts=posts)
+users = Blueprint('users', __name__)
 
-@app.route('/about')
-def about():
-    return render_template("about.html", title="About")
+# -------------------------------------------------------
+# AUTHENTIFICATION
 
-@app.route('/register', methods=['GET', 'POST'])
+@users.route('/register', methods=['GET', 'POST'])
 def register():
     if current_user.is_authenticated:
         return redirect(url_for('home'))
@@ -41,7 +29,7 @@ def register():
         return redirect(url_for('login'))
     return render_template("register.html", title="Register", form=form)
 
-@app.route('/login', methods=['GET', 'POST'])
+@users.route('/login', methods=['GET', 'POST'])
 def login():
     if current_user.is_authenticated:
         return redirect(url_for('home'))
@@ -80,31 +68,15 @@ def login():
             flash('Login unsuccesfull, please check email and password !', 'danger')
     return render_template("login.html", title="Login", form=form)
 
-@app.route('/logout')
+@users.route('/logout')
 def logout():
     logout_user()
     return redirect(url_for('home'))
 
-def save_picture(form_picture):
-    # Crée un nom de fichier random avec le module secrets
-    random_hex = secrets.token_hex(8)
-    # récupère le nom de fichier et l'extension
-    # on ne se sert pas du nom de fichier donc 
-    # on peut mettre un _ au lieu de nommer la variable
-    _, f_ext = os.path.splitext(form_picture.filename)
-    # construit le filename
-    picture_fn = random_hex + f_ext
-    # app.root_path renvoie le path de notre package directory (notre app)
-    picture_path = os.path.join(app.root_path, "static/profile_pics", picture_fn)
-    # Resize with Pillow Module (Image)
-    output_size = (125, 125)
-    i = Image.open(form_picture)
-    i.thumbnail(output_size)
-    # save data from form
-    i.save(picture_path)
-    return picture_fn
+# -------------------------------------------------------
+# ACCOUNT MANAGEMENT AND ACTIVITY
 
-@app.route('/account', methods=['GET', 'POST'])
+@users.route('/account', methods=['GET', 'POST'])
 @login_required
 def account():
     form = UpdateAccountForm()
@@ -128,61 +100,7 @@ def account():
         image_file=image_file, 
         form=form)
 
-@app.route('/post/new', methods=['GET', 'POST'])
-@login_required
-def new_post():
-    form = PostForm()
-    if form.validate_on_submit():
-        #possible to use the "author" backref OR "user_id" column name
-        post = Post(
-            title = form.title.data,
-            content = form.content.data,
-            author = current_user
-        )
-        db.session.add(post)
-        db.session.commit()
-        flash('Your post has been created !', 'success')
-        return redirect(url_for('home'))
-    return render_template("create_post.html", title="New post", form=form, legend="New Post")
-
-@app.route('/post/<int:post_id>')
-def post(post_id):
-    #post = Post.query.get(post_id)
-    post = Post.query.get_or_404(post_id)
-    return render_template('post.html', title=post.title, post=post)
-
-@app.route('/post/<int:post_id>/update', methods=['GET', 'POST'])
-@login_required
-def update_post(post_id):
-    post = Post.query.get_or_404(post_id)
-    if post.author != current_user:
-        abort(403)
-    form = PostForm()
-    # Populate the form with data from the post
-    if form.validate_on_submit():
-        post.title = form.title.data
-        post.content = form.content.data
-        db.session.commit()
-        flash('Your post has been updated', 'success')
-        return redirect(url_for('post', post_id=post.id))
-    #Pas sûr que ce elif ait bcp de sens
-    elif request.method == 'GET':
-        form.title.data = post.title
-        form.content.data = post.content
-    return render_template("create_post.html", title="Update post", form=form, legend="Update Post")
-
-@app.route('/post/<int:post_id>/delete', methods=['POST'])
-@login_required
-def delete_post(post_id):
-    post = Post.query.get_or_404(post_id)
-    if post.author != current_user:
-        abort(403)
-    db.session.delete(post)
-    db.session.commit()
-    flash('Your post has been deleted', 'success')
-    return redirect(url_for('home'))
-
-@app.route('/user/<string:username>')
+@users.route('/user/<string:username>')
 def user_posts(username):
     page = request.args.get('page', 1, type=int)
     user = User.query.filter_by(username=username).first_or_404()
@@ -191,22 +109,10 @@ def user_posts(username):
         .paginate(page=page, per_page=5)
     return render_template("user_posts.html", posts=posts, user=user)
 
-def send_reset_email(user):
-    #On récupère le token depuis l'instance User
-    token = user.get_reset_token()
-    #Crée le message avec la classe Message
-    # Attention : il faut avoir un mail appartenant au domaine pour aps finir dans les spam
-    msg = Message('Password Reset Request', 
-        sender='vmatheron.dev@gmail.com', 
-        recipients=[user.email])
-    msg.body = f"""To reset your password, please visit the following link:
-{url_for('reset_token', token=token, _external=True)}
+# -------------------------------------------------------
+# RESET PASSWORD
 
-If you did not make this request then please ignore this email and no changes will be made.
-""" 
-    mail.send(msg)
-
-@app.route("/reset_password", methods=['GET', 'POST'])
+@users.route("/reset_password", methods=['GET', 'POST'])
 def reset_request():
     if current_user.is_authenticated:
         return redirect(url_for('home'))
@@ -218,7 +124,7 @@ def reset_request():
         return redirect(url_for('login'))
     return render_template("reset_request.html", form=form, title='Reset Password')
 
-@app.route("/reset_password/<token>", methods=['GET', 'POST'])
+@users.route("/reset_password/<token>", methods=['GET', 'POST'])
 def reset_token(token):
     if current_user.is_authenticated:
         return redirect(url_for('home'))
