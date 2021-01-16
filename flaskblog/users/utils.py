@@ -1,7 +1,7 @@
 
 import secrets, os
-from flaskblog import app, mail
-from flask import url_for
+from flaskblog import mail
+from flask import url_for, current_app
 from PIL import Image
 from flask_mail import Message
 
@@ -15,7 +15,7 @@ def save_picture(form_picture):
     # construit le filename
     picture_fn = random_hex + f_ext
     # app.root_path renvoie le path de notre package directory (notre app)
-    picture_path = os.path.join(app.root_path, "static/profile_pics", picture_fn)
+    picture_path = os.path.join(current_app.root_path, "static/profile_pics", picture_fn)
     # Resize with Pillow Module (Image)
     output_size = (125, 125)
     i = Image.open(form_picture)
@@ -33,7 +33,7 @@ def send_reset_email(user):
         sender='vmatheron.dev@gmail.com', 
         recipients=[user.email])
     msg.body = f"""To reset your password, please visit the following link:
-{url_for('reset_token', token=token, _external=True)}
+{url_for('users.reset_token', token=token, _external=True)}
 
 If you did not make this request then please ignore this email and no changes will be made.
 """ 

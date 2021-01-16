@@ -1,7 +1,10 @@
 -*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*
->>>>> Step 11 - Blueprints and configuration
+>>>>> STEP 11 - BLUEPRINTS AND CONFIGURATION
+-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*
 
 >>> Blueprints :
+_______________________________
+
 (Split up the different application fonctionalities into their own sections)
 
 - Create new package in our application named after the functions it contains
@@ -21,12 +24,57 @@ exp : users, posts, main
 - Put all the imports needed in the right files
 - Fix the imports where some changes are needed
 
->> Delete old files (forms.py and routes.py)
+>> DELETE old files (forms.py and routes.py)
+
+>> __INIT__.py
+- In the flaskblog.__init__.py, change the way routes are imported
+- Import Blueprint objects from each of those new packages, and register them :
+        from flaskblog.users.routes import users
+        app.register_blueprint(users)
+
+- Change all url_for() functions in the project, f.ex :
+        url_for('login') ==> url_for('users.login')
+
+- Change this line in __init__.py (page to redirect if unlogged user try to access a page):
+        login_manager.login_view = 'login' 
+        ==> login_manager.login_view = 'users.login'
 
 
 
+>>> Configuration
+_______________________________
+
+- Put configuration values of the app into their own file
+- Create a Config class
+- app.config['NAME'] ==> CONSTANT_NAME
+- Put some of these informations in environment variables
+        nano ~/.bashrc
+        export SECRET_KEY="6023ea02366af26f4d0b13335e6c52d3" 
+            #(enlever les espaces avant et après le "=")
+- Importer la classe de configuration dans notre app :
+        from flaskblog.config import Config
+- Après avoir instancié notre app "app = Flask(__name__)", on importe les configurations :
+        app.config.from_object(Config)
 
 >>> Application factory : 
+_______________________________
 (Creation of the app in a function (usefull if we want an app for development and another for production))
+Allows to create instances of our application (with different configurations)
+
+- Create function to create the app :
+        def create_app(config_class=Config):
+- Put creation of the app, config, and blueprints inside this function
+- delete "app" word from extensions, exp :
+        db = SQLAlchemy(app) => db = SQLAlchemy()
+        (...)
+- initialize the extensions inside the function :
+        db.init_app(app)
+- return app at the end of the function
+- Replace all the "app" call through the aplication :
+        from flaskblog import app
+        ==> from flask import current_app
 
 
+-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*
+>>>>> STEP 12 - CUSTOM ERROR PAGES
+-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*
