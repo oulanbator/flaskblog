@@ -43,6 +43,7 @@ def login():
             -----------------------------------------------------------------------
             Warning: You MUST validate the value of the next parameter. 
             If you do not, your application will be vulnerable to open redirects.
+            
             For an example implementation of is_safe_url see this Flask Snippet :
             https://web.archive.org/web/20190128010142/http://flask.pocoo.org/snippets/62/
             >> The snippet :

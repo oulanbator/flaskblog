@@ -78,3 +78,21 @@ Allows to create instances of our application (with different configurations)
 -*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*
 >>>>> STEP 12 - CUSTOM ERROR PAGES
 -*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*
+
+- New Blueprint (errors) : create new folder, and __init__.py
+- create handlers.py
+- Import and create "errors" Blueprint
+- Create "errors routes" with specific decorator :
+        @errors.app_errorhandler(404)
+        def error404(error):
+                return render_template('errors/404.html'), 404
+- render template (in subfolder)
+- the second returned argument specifies the HTTP code to be returned (otherwise would be 200 ?)
+- create the errors templates ("errors/404.html" p.ex)
+
+-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*
+>>>>> FUTURE FEATURES
+-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*-*
+
+- Unit tests
+- Deploy on several platforms
